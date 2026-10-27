@@ -2,10 +2,12 @@ package cliproxy
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/registry"
+	"github.com/router-for-me/CLIProxyAPI/v8/internal/util"
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/watcher/synthesizer"
 	coreauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/config"
@@ -55,6 +57,7 @@ type configCommit struct {
 }
 
 type routingRuntimeState struct {
+	quotaBatchStateFile      string
 	strategy                 string
 	sessionAffinity          bool
 	sessionAffinityTTL       time.Duration
@@ -74,6 +77,12 @@ func normalizedRoutingRuntimeState(cfg *config.Config) routingRuntimeState {
 	}
 
 	switch strings.ToLower(strings.TrimSpace(cfg.Routing.Strategy)) {
+	case "quota-batch":
+		state.strategy = "quota-batch"
+		if dir, err := util.ResolveAuthDir(cfg.AuthDir); err == nil {
+			state.quotaBatchStateFile = filepath.Join(dir, ".quota-batch-state")
+		}
+
 	case "weighted-round-robin", "weightedroundrobin", "wrr":
 		state.strategy = "weighted-round-robin"
 	case "fill-first", "fillfirst", "ff":
@@ -100,6 +109,8 @@ func normalizedRoutingRuntimeState(cfg *config.Config) routingRuntimeState {
 func newRoutingSelector(state routingRuntimeState) coreauth.Selector {
 	var selector coreauth.Selector
 	switch state.strategy {
+	case "quota-batch":
+		return coreauth.NewQuotaBatchSelector(state.quotaBatchStateFile)
 	case "weighted-round-robin":
 		selector = &coreauth.WeightedRoundRobinSelector{}
 	case "fill-first":

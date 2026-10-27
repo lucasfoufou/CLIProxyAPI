@@ -670,7 +670,8 @@ func selectionArgForSelector(selector Selector, routeModel string) string {
 
 func selectorContextForAvailableAuths(ctx context.Context, selector Selector, routeModel string) context.Context {
 	ctx = withWeightedSelectorStateModel(ctx, selector, routeModel)
-	if !isBuiltInSelector(selector) {
+	_, quotaBatch := selector.(*QuotaBatchSelector)
+	if !isBuiltInSelector(selector) && !quotaBatch {
 		if _, sessionAffinity := selector.(*SessionAffinitySelector); !sessionAffinity {
 			return ctx
 		}
@@ -1849,6 +1850,7 @@ func (m *Manager) pickNextLegacy(ctx context.Context, provider, model string, op
 	targetKey := canonicalSchedulingProvider(provider)
 	affinitySelector, hasAffinity := selector.(*SessionAffinitySelector)
 	trackTransientAffinity := hasAffinity && affinitySelector != nil && affinitySelector.rebindOnQuotaOnly
+	var quotaBatchPool []*Auth
 	var affinityCandidates []*Auth
 	if trackTransientAffinity {
 		affinityCandidates = make([]*Auth, 0, len(m.auths))
@@ -1857,13 +1859,16 @@ func (m *Manager) pickNextLegacy(ctx context.Context, provider, model string, op
 		if candidate == nil || canonicalSchedulingProvider(executorKeyFromAuth(candidate)) != targetKey || candidate.Disabled {
 			continue
 		}
-		if pinnedAuthID != "" && candidate.ID != pinnedAuthID {
-			continue
-		}
 		if !eligibility.allows(candidate) {
 			continue
 		}
 		if modelKey != "" && !m.authSupportsRouteModel(registryRef, candidate, model) {
+			continue
+		}
+		if _, ok := selector.(*QuotaBatchSelector); ok {
+			quotaBatchPool = append(quotaBatchPool, candidate.Clone())
+		}
+		if pinnedAuthID != "" && candidate.ID != pinnedAuthID {
 			continue
 		}
 		if trackTransientAffinity {
@@ -1896,6 +1901,7 @@ func (m *Manager) pickNextLegacy(ctx context.Context, provider, model string, op
 	if !handled {
 		selectorCtx := selectorContextForAvailableAuths(ctx, selector, model)
 		selectorCtx = withSessionAffinityTransientAuthIDs(selectorCtx, transientAuthIDs)
+		selectorCtx = m.quotaBatchSelectionContext(selectorCtx, selector, quotaBatchPool)
 		selected, errPick = selector.Pick(selectorCtx, provider, selectionArgForSelector(selector, model), opts, selectorAuths)
 		if errPick != nil {
 			if isBuiltInSelector(selector) {
@@ -2185,15 +2191,13 @@ func (m *Manager) pickNextMixedLegacy(ctx context.Context, providers []string, m
 	registryRef := registry.GetGlobalRegistry()
 	affinitySelector, hasAffinity := selector.(*SessionAffinitySelector)
 	trackTransientAffinity := hasAffinity && affinitySelector != nil && affinitySelector.rebindOnQuotaOnly
+	var quotaBatchPool []*Auth
 	var affinityCandidates []*Auth
 	if trackTransientAffinity {
 		affinityCandidates = make([]*Auth, 0, len(m.auths))
 	}
 	for _, candidate := range m.auths {
 		if candidate == nil || candidate.Disabled {
-			continue
-		}
-		if pinnedAuthID != "" && candidate.ID != pinnedAuthID {
 			continue
 		}
 		if !eligibility.allows(candidate) {
@@ -2210,6 +2214,12 @@ func (m *Manager) pickNextMixedLegacy(ctx context.Context, providers []string, m
 			continue
 		}
 		if modelKey != "" && !m.authSupportsRouteModel(registryRef, candidate, model) {
+			continue
+		}
+		if _, ok := selector.(*QuotaBatchSelector); ok {
+			quotaBatchPool = append(quotaBatchPool, candidate.Clone())
+		}
+		if pinnedAuthID != "" && candidate.ID != pinnedAuthID {
 			continue
 		}
 		if trackTransientAffinity {
@@ -2242,6 +2252,7 @@ func (m *Manager) pickNextMixedLegacy(ctx context.Context, providers []string, m
 	if !handled {
 		selectorCtx := selectorContextForAvailableAuths(ctx, selector, model)
 		selectorCtx = withSessionAffinityTransientAuthIDs(selectorCtx, transientAuthIDs)
+		selectorCtx = m.quotaBatchSelectionContext(selectorCtx, selector, quotaBatchPool)
 		selected, errPick = selector.Pick(selectorCtx, "mixed", selectionArgForSelector(selector, model), opts, selectorAuths)
 		if errPick != nil {
 			if isBuiltInSelector(selector) {
