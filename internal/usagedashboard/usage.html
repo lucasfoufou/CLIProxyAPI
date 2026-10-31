@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Usage · CLIProxy</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%23795a46%27/%3E%3Cpath d=%27M14 42V28m18 14V16m18 26V22%27 stroke=%27%23fbf6f2%27 stroke-width=%276%27 stroke-linecap=%27round%27/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #251c18;
+        --panel: #30241e;
+        --border: #584236;
+        --muted: #ac9e96;
+        --text: #fbf6f2;
+        --accent: #da8b64;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #1b1714;
+        color: var(--text);
+        font:
+          14px system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+        color: inherit;
+      }
+      button,
+      select {
+        background: #49372d;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        padding: 7px 11px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #624936;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+      input {
+        background: #211a16;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 9px;
+        width: 100%;
+      }
+      button[aria-pressed="true"] {
+        background: #795a46;
+        box-shadow: 0 0 0 1px #ac8162 inset;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .shell {
+        max-width: 1280px;
+        margin: 18px auto;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        min-height: calc(100vh - 36px);
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--border);
+        padding: 14px 20px;
+      }
+      header h1 {
+        font-size: 15px;
+        font-weight: 500;
+        margin: 0 5px 0 0;
+        color: var(--muted);
+      }
+      .divider {
+        color: var(--border);
+      }
+      .spacer {
+        flex: 1;
+      }
+      .segments {
+        display: flex;
+        gap: 3px;
+        background: #49372d;
+        padding: 3px;
+        border-radius: 8px;
+      }
+      .segments button {
+        padding: 4px 10px;
+        font-size: 13px;
+        background: transparent;
+      }
+      .segments button[aria-pressed="true"] {
+        background: #795a46;
+      }
+      .icon {
+        color: var(--muted);
+        background: transparent;
+      }
+      .body {
+        max-width: 1020px;
+        margin: auto;
+        padding: 30px 28px;
+      }
+      .muted,
+      small {
+        color: var(--muted);
+      }
+      small {
+        font-size: 12px;
+      }
+      .top {
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        gap: 40px;
+        margin-bottom: 32px;
+      }
+      .big {
+        font-size: 40px;
+        font-weight: 600;
+        letter-spacing: -1.5px;
+        font-variant-numeric: tabular-nums;
+        margin: 0 0 3px;
+      }
+      .provider {
+        margin-top: 24px;
+      }
+      .provider-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .provider-name {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        display: inline-block;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+      }
+      .chart-title {
+        margin: 3px 0 8px;
+        font-weight: 500;
+      }
+      canvas {
+        width: 100%;
+        height: 240px;
+        display: block;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 25px 0 16px;
+      }
+      .totals {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 22px;
+      }
+      .total-value {
+        font-size: 18px;
+        margin-top: 5px;
+        font-variant-numeric: tabular-nums;
+      }
+      .bar {
+        height: 9px;
+        border-radius: 4px;
+        display: flex;
+        overflow: hidden;
+        max-width: 550px;
+        background: #453b35;
+      }
+      .bar span {
+        min-width: 0;
+      }
+      .legend {
+        display: flex;
+        gap: 17px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .swatch {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        margin-right: 5px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      th {
+        text-align: left;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 400;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 8px;
+      }
+      td {
+        border-bottom: 1px solid #48352b;
+        padding: 13px 8px;
+      }
+      th.num,
+      td.num {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .model-bar {
+        height: 2px;
+        max-width: 190px;
+        background: #e2c5b1;
+        margin-top: 8px;
+      }
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin: 24px 0 0;
+      }
+      .status {
+        padding: 10px 14px;
+        background: #49331f;
+        border: 1px solid #765132;
+        border-radius: 8px;
+        margin-bottom: 22px;
+        color: #f4cda6;
+        line-height: 1.5;
+      }
+      .error {
+        color: #ffc2ad;
+        background: #4d271f;
+        border-color: #935445;
+      }
+      .empty {
+        padding: 42px 16px;
+        text-align: center;
+        color: var(--muted);
+      }
+      #login {
+        max-width: 390px;
+        margin: 90px auto;
+        padding: 28px;
+      }
+      #login h2 {
+        font-size: 25px;
+        font-weight: 500;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+      }
+      #login button {
+        margin-top: 14px;
+        width: 100%;
+      }
+      dialog {
+        color: var(--text);
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        max-width: 960px;
+        width: 95%;
+        max-height: 90vh;
+        padding: 24px;
+      }
+      dialog::backdrop {
+        background: #0009;
+      }
+      dialog input[type="number"] {
+        min-width: 95px;
+        width: 110px;
+        padding: 7px;
+      }
+      dialog td {
+        padding: 8px;
+      }
+      dialog .row {
+        margin-bottom: 12px;
+      }
+      .price-model {
+        min-width: 200px;
+      }
+      .price-actions {
+        position: sticky;
+        bottom: -24px;
+        padding: 16px 0;
+        background: var(--bg);
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+      }
+      @media (max-width: 760px) {
+        .shell {
+          margin: 0;
+          border-radius: 0;
+          border: 0;
+          min-height: 100vh;
+        }
+        .body {
+          padding: 25px 18px;
+        }
+        header {
+          padding: 12px;
+          gap: 8px;
+        }
+        header .spacer {
+          display: none;
+        }
+        .top {
+          grid-template-columns: 1fr;
+          gap: 26px;
+        }
+        .big {
+          font-size: 36px;
+        }
+        .providers {
+          display: flex;
+          gap: 24px;
+          flex-wrap: wrap;
+        }
+        .provider {
+          flex: 1;
+          min-width: 130px;
+          margin-top: 18px;
+        }
+        .totals {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 18px;
+        }
+        canvas {
+          height: 210px;
+        }
+        .segments {
+          flex-wrap: wrap;
+        }
+        dialog {
+          padding: 16px;
+        }
+        .price-actions {
+          bottom: -16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <h1>Usage</h1>
+        <div id="filters" hidden class="row">
+          <span class="divider">/</span
+          ><select id="provider" aria-label="Provider">
+            <option value="">Tous les providers</option></select
+          ><span class="divider">/</span
+          ><select id="account" aria-label="Compte">
+            <option value="">Tous les comptes</option>
+          </select>
+        </div>
+        <span class="spacer"></span>
+        <div id="toolbar" hidden class="row">
+          <div class="segments" id="periods" aria-label="Période">
+            <button data-days="1" aria-pressed="true">24 h</button
+            ><button data-days="7" aria-pressed="false">7 jours</button
+            ><button data-days="30" aria-pressed="false">30 jours</button
+            ><button data-days="90" aria-pressed="false">90 jours</button>
+          </div>
+          <div class="segments" id="modes" aria-label="Mesure">
+            <button data-mode="cost" aria-pressed="true">Coût</button
+            ><button data-mode="tokens" aria-pressed="false">Tokens</button>
+          </div>
+          <button
+            class="icon"
+            id="refresh"
+            aria-label="Actualiser"
+            title="Actualiser"
+          >
+            ↻</button
+          ><button class="icon" id="prices">Tarifs</button
+          ><button
+            class="icon"
+            id="logout"
+            aria-label="Déconnexion"
+            title="Déconnexion"
+          >
+            Quitter
+          </button>
+        </div>
+      </header>
+      <form id="login">
+        <h2>Ce qui passe par le proxy.</h2>
+        <p class="muted">
+          Tokens, cache et coût estimé. Tous vos comptes, au même endroit.
+        </p>
+        <label for="key">Clé de gestion CLIProxy</label
+        ><input
+          type="password"
+          id="key"
+          autocomplete="current-password"
+          required
+        /><button type="submit">Ouvrir Usage</button>
+        <p id="login-error" role="alert" class="note"></p>
+        <p class="note">
+          La clé reste en mémoire dans cet onglet. Les données sont conservées
+          sur votre serveur.
+        </p>
+      </form>
+      <div class="body" id="dashboard" hidden>
+        <div id="message" class="status" role="status" hidden></div>
+        <div class="top">
+          <section>
+            <h2 class="big" id="grand">—</h2>
+            <small id="subtitle"></small>
+            <div class="providers" id="providers"></div>
+          </section>
+          <section>
+            <div class="chart-title" id="chart-title">Coût par heure</div>
+            <canvas
+              id="chart"
+              role="img"
+              aria-label="Évolution horaire. Les valeurs sont disponibles dans le tableau en sélectionnant Heure."
+            ></canvas
+            ><small id="chart-hint"
+              >Heures locales · actualisation toutes les 30 secondes</small
+            >
+          </section>
+        </div>
+        <h2 class="section-title">Totaux</h2>
+        <div class="totals" id="totals"></div>
+        <h2 class="section-title" id="type-title">Coût par type</h2>
+        <div class="bar" id="bar"></div>
+        <div class="legend" id="legend"></div>
+        <div class="row">
+          <h2 class="section-title">Répartition</h2>
+          <div class="segments" id="groups" aria-label="Répartition">
+            <button data-group="models" aria-pressed="true">Modèle</button
+            ><button data-group="providers" aria-pressed="false">
+              Provider</button
+            ><button data-group="accounts" aria-pressed="false">Compte</button
+            ><button data-group="hours" aria-pressed="false">Heure</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th id="group-label">Modèle</th>
+                <th class="num">Coût estimé</th>
+                <th class="num">Tokens</th>
+                <th class="num">Tentatives</th>
+                <th class="num">Erreurs</th>
+              </tr>
+            </thead>
+            <tbody id="breakdown"></tbody>
+          </table>
+        </div>
+        <p class="note" id="footnote">
+          Estimation en USD au tarif API standard, y compris pour les comptes
+          sur abonnement. Tarifs actuels appliqués à toute la période. Hors
+          taxes, outils, images et suppléments de service tier. Historique local
+          : 90 jours. Une tentative correspond à une exécution ; les retries et
+          fallbacks sont comptés séparément.
+        </p>
+        <small id="updated"></small>
+      </div>
+    </main>
+    <dialog id="price-dialog" aria-labelledby="price-title">
+      <form id="price-form">
+        <div class="row">
+          <h2 id="price-title" class="section-title">
+            Tarifs · $ par million de tokens
+          </h2>
+          <button type="button" id="close-prices" aria-label="Fermer">✕</button>
+        </div>
+        <p class="note">
+          Prix de référence OpenRouter du 31 octobre 2026. Modifiez les tarifs
+          de vos modèles ici. Les changements recalculent l’estimation sur tout
+          l’historique. Les paliers de long contexte apparaissent sous chaque
+          modèle et sont également modifiables.
+        </p>
+        <div class="row">
+          <input
+            id="price-search"
+            placeholder="Chercher ou ajouter un modèle…"
+            aria-label="Modèle"
+          /><button type="button" id="add-price">Ajouter</button
+          ><button type="button" id="all-prices">Tous les tarifs</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Modèle</th>
+                <th>Entrée hors cache</th>
+                <th>Cache lu</th>
+                <th>Cache écrit</th>
+                <th>Sortie</th>
+              </tr>
+            </thead>
+            <tbody id="price-rows"></tbody>
+          </table>
+        </div>
+        <p class="note" id="price-note"></p>
+        <div class="price-actions">
+          <button type="submit">Enregistrer les tarifs</button
+          ><span id="price-error" role="alert"></span>
+        </div>
+      </form>
+    </dialog>
+    <script>
+      "use strict";
+      const $ = (id) => document.getElementById(id),
+        compact = (n) =>
+          new Intl.NumberFormat("fr-FR", {
+            notation: "compact",
+            maximumFractionDigits: 2,
+          }).format(n || 0),
+        usd = (n) =>
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 2,
+          }).format(n || 0);
+      const colors = ["#eee5df", "#b29b8b", "#867269", "#d88a61"];
+      let key = "",
+        days = 1,
+        mode = "cost",
+        group = "models",
+        data = null,
+        labels = {},
+        loading = false,
+        pending = false,
+        generation = 0,
+        rates = [],
+        edited = new Map(),
+        showAll = false;
+      function node(tag, text, cls) {
+        const n = document.createElement(tag);
+        if (text !== undefined) n.textContent = text;
+        if (cls) n.className = cls;
+        return n;
+      }
+      async function api(path, options = {}) {
+        const r = await fetch("/v8/management/observability/usage/" + path, {
+          ...options,
+          headers: {
+            Authorization: "Bearer " + key,
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+          cache: "no-store",
+        });
+        if (!r.ok) {
+          let detail = "";
+          try {
+            detail = (await r.json()).error || "";
+          } catch {}
+          throw new Error(
+            r.status === 401 || r.status === 403
+              ? "Clé refusée ou accès distant non autorisé."
+              : detail || "Serveur indisponible (" + r.status + ").",
+          );
+        }
+        return r.json();
+      }
+      function message(text, error = false) {
+        $("message").hidden = !text;
+        $("message").textContent = text;
+        $("message").className = "status" + (error ? " error" : "");
+      }
+      function options(id, values, all) {
+        const select = $(id),
+          old = select.value;
+        select.replaceChildren(new Option(all, ""));
+        for (const v of values)
+          select.add(new Option(id === "account" ? labels[v] || v : v, v));
+        select.value = values.includes(old) ? old : "";
+      }
+      async function load() {
+        if (!key) return;
+        if (loading) {
+          pending = true;
+          return;
+        }
+        loading = true;
+        const gen = generation;
+        $("refresh").disabled = true;
+        try {
+          const q = new URLSearchParams({
+            days,
+            provider: $("provider").value,
+            account: $("account").value,
+          });
+          const result = await api("summary?" + q);
+          if (gen !== generation || pending) return;
+          data = result.summary;
+          labels = result.account_labels || {};
+          options("provider", data.available_providers, "Tous les providers");
+          options("account", data.available_accounts, "Tous les comptes");
+          $("login").hidden = true;
+          $("dashboard").hidden = false;
+          $("toolbar").hidden = false;
+          $("filters").hidden = false;
+          $("key").value = "";
+          render();
+          $("updated").textContent =
+            "Mis à jour à " + new Date().toLocaleTimeString("fr-FR");
+        } catch (e) {
+          if (gen !== generation) return;
+          if (data)
+            message(
+              "Actualisation impossible : " +
+                e.message +
+                " Les dernières données restent affichées.",
+              true,
+            );
+          else $("login-error").textContent = e.message;
+        } finally {
+          loading = false;
+          $("refresh").disabled = false;
+          if (pending) {
+            pending = false;
+            load();
+          }
+        }
+      }
+      function render() {
+        if (!data) return;
+        const t = data.totals;
+        $("grand").textContent =
+          mode === "cost" ? usd(t.cost) : compact(t.tokens);
+        $("subtitle").textContent =
+          compact(t.attempts) +
+          " tentatives · " +
+          data.sessions +
+          " sessions identifiées" +
+          (mode === "cost" ? " · estimation API" : "");
+        const messages = [];
+        if (t.unpriced)
+          messages.push(
+            compact(t.unpriced) +
+              " tentatives non chiffrées (tarif absent ou tokens incomplets). Le montant affiché est partiel.",
+          );
+        if (data.unpriced_models.length)
+          messages.push(
+            "Tarifs à renseigner : " + data.unpriced_models.join(", ") + ".",
+          );
+        message(messages.join(" "));
+        $("providers").replaceChildren();
+        const total = t[mode] || 0;
+        for (const [i, p] of data.providers.entries()) {
+          const box = node("div", undefined, "provider"),
+            row = node("div", undefined, "provider-row"),
+            name = node("span", undefined, "provider-name"),
+            dot = node("span", undefined, "dot");
+          dot.style.background = colors[i % colors.length];
+          name.append(dot, node("span", p.key || "Inconnu"));
+          row.append(
+            name,
+            node("span", mode === "cost" ? usd(p.cost) : compact(p.tokens)),
+          );
+          box.append(
+            row,
+            node(
+              "small",
+              (total ? ((p[mode] / total) * 100).toFixed(1) : "0") +
+                " % · " +
+                compact(p.attempts) +
+                " tentatives",
+            ),
+          );
+          $("providers").append(box);
+        }
+        $("totals").replaceChildren();
+        for (const [name, val] of [
+          ["Tokens traités", compact(t.tokens)],
+          ["Entrée en cache", compact(t.cache_read)],
+          ["Entrée hors cache", compact(t.input)],
+          ["Sortie", compact(t.output)],
+          ["Économie de cache", usd(t.cache_savings)],
+        ]) {
+          const box = node("div");
+          box.append(node("small", name), node("div", val, "total-value"));
+          $("totals").append(box);
+        }
+        $("type-title").textContent =
+          mode === "cost" ? "Coût par type" : "Tokens par type";
+        $("bar").replaceChildren();
+        $("legend").replaceChildren();
+        const parts =
+          mode === "cost"
+            ? [
+                ["Entrée", t.input_cost],
+                ["Cache lu", t.cache_read_cost],
+                ["Cache écrit", t.cache_write_cost],
+                ["Sortie", t.output_cost],
+              ]
+            : [
+                ["Entrée", t.input],
+                ["Cache lu", t.cache_read],
+                ["Cache écrit", t.cache_write],
+                ["Sortie", t.output],
+                ["Non classés", t.unclassified],
+              ];
+        const sum = parts.reduce((n, p) => n + p[1], 0);
+        parts.forEach(([name, value], i) => {
+          const color = colors[i % colors.length],
+            bar = node("span");
+          bar.style.width = (sum ? (100 * value) / sum : 0) + "%";
+          bar.style.background = color;
+          $("bar").append(bar);
+          const item = node("span"),
+            swatch = node("span", undefined, "swatch");
+          swatch.style.background = color;
+          item.append(
+            swatch,
+            document.createTextNode(
+              name + " " + (mode === "cost" ? usd(value) : compact(value)),
+            ),
+          );
+          $("legend").append(item);
+        });
+        renderTable();
+        draw();
+      }
+      function renderTable() {
+        $("group-label").textContent = {
+          models: "Modèle",
+          providers: "Provider",
+          accounts: "Compte",
+          hours: "Heure",
+        }[group];
+        $("breakdown").replaceChildren();
+        const rows = data[group];
+        if (!rows.length) {
+          const td = node(
+            "td",
+            "Aucune requête sur cette période. Les nouvelles requêtes apparaîtront ici.",
+            "empty",
+          );
+          td.colSpan = 5;
+          const tr = node("tr");
+          tr.append(td);
+          $("breakdown").append(tr);
+          return;
+        }
+        const max = Math.max(...rows.map((r) => r[mode]), 1);
+        for (const r of rows) {
+          const tr = node("tr"),
+            name =
+              group === "accounts"
+                ? labels[r.key] || r.key
+                : group === "hours"
+                  ? new Date(r.key).toLocaleString("fr-FR", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                    })
+                  : r.key;
+          const td = node("td", name || "Inconnu");
+          const bar = node("div", undefined, "model-bar");
+          bar.style.width = (r[mode] / max) * 190 + "px";
+          td.append(bar);
+          tr.append(
+            td,
+            node("td", usd(r.cost) + (r.unpriced ? " *" : ""), "num"),
+            node("td", compact(r.tokens), "num"),
+            node("td", compact(r.attempts), "num"),
+            node("td", compact(r.failed), "num"),
+          );
+          $("breakdown").append(tr);
+        }
+      }
+      function hourly() {
+        const map = new Map(data.hours.map((b) => [Date.parse(b.key), b]));
+        const from = new Date(data.from);
+        from.setUTCMinutes(0, 0, 0);
+        const out = [];
+        for (let t = +from; t < Date.parse(data.to); t += 3600000)
+          out.push({ time: t, value: map.get(t)?.[mode] || 0 });
+        return out;
+      }
+      function draw() {
+        if (!data || $("dashboard").hidden) return;
+        const c = $("chart"),
+          rect = c.getBoundingClientRect(),
+          dpr = window.devicePixelRatio || 1;
+        c.width = rect.width * dpr;
+        c.height = rect.height * dpr;
+        const ctx = c.getContext("2d");
+        ctx.scale(dpr, dpr);
+        const w = rect.width,
+          h = rect.height,
+          left = 49,
+          right = 12,
+          top = 15,
+          bottom = 28,
+          pts = hourly(),
+          max =
+            Math.max(...pts.map((x) => x.value), mode === "cost" ? 0.01 : 1) *
+            1.12;
+        ctx.font = "11px system-ui";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = top + ((h - top - bottom) * i) / 4;
+          ctx.strokeStyle = "#584236";
+          ctx.beginPath();
+          ctx.moveTo(left, y);
+          ctx.lineTo(w - right, y);
+          ctx.stroke();
+          ctx.fillStyle = "#ac9e96";
+          ctx.textAlign = "right";
+          ctx.fillText(
+            mode === "cost"
+              ? usd((max * (4 - i)) / 4)
+              : compact((max * (4 - i)) / 4),
+            left - 7,
+            y + 4,
+          );
+        }
+        const x = (i) =>
+            left + (i * (w - left - right)) / Math.max(pts.length - 1, 1),
+          y = (v) => h - bottom - (v / max) * (h - top - bottom);
+        ctx.beginPath();
+        pts.forEach((p, i) =>
+          i ? ctx.lineTo(x(i), y(p.value)) : ctx.moveTo(x(i), y(p.value)),
+        );
+        ctx.strokeStyle = "#eee5df";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineTo(x(pts.length - 1), h - bottom);
+        ctx.lineTo(left, h - bottom);
+        ctx.closePath();
+        ctx.fillStyle = "#eee5df1c";
+        ctx.fill();
+        ctx.fillStyle = "#ac9e96";
+        [0, Math.floor((pts.length - 1) / 2), pts.length - 1].forEach(
+          (i, k) => {
+            ctx.textAlign = k === 0 ? "left" : k === 2 ? "right" : "center";
+            ctx.fillText(
+              new Date(pts[i].time).toLocaleString(
+                "fr-FR",
+                days > 1
+                  ? { day: "numeric", month: "short", hour: "2-digit" }
+                  : { hour: "2-digit", minute: "2-digit" },
+              ),
+              x(i),
+              h - 5,
+            );
+          },
+        );
+        $("chart-title").textContent =
+          mode === "cost" ? "Coût par heure" : "Tokens traités par heure";
+        c.onmousemove = (e) => {
+          const i = Math.max(
+            0,
+            Math.min(
+              pts.length - 1,
+              Math.round(
+                ((e.offsetX - left) / (w - left - right)) * (pts.length - 1),
+              ),
+            ),
+          );
+          c.title =
+            new Date(pts[i].time).toLocaleString("fr-FR") +
+            " · " +
+            (mode === "cost" ? usd(pts[i].value) : compact(pts[i].value));
+        };
+      }
+      $("login").onsubmit = (e) => {
+        e.preventDefault();
+        key = $("key").value.trim();
+        $("login-error").textContent = "";
+        load();
+      };
+      $("logout").onclick = () => {
+        key = "";
+        data = null;
+        labels = {};
+        generation++;
+        $("dashboard").hidden = true;
+        $("toolbar").hidden = true;
+        $("filters").hidden = true;
+        $("login").hidden = false;
+        $("key").focus();
+      };
+      $("refresh").onclick = load;
+      $("provider").onchange = () => {
+        $("account").value = "";
+        load();
+      };
+      $("account").onchange = load;
+      for (const [id, attr, set] of [
+        [
+          "periods",
+          "days",
+          (v) => {
+            days = Number(v);
+            load();
+          },
+        ],
+        [
+          "modes",
+          "mode",
+          (v) => {
+            mode = v;
+            render();
+          },
+        ],
+        [
+          "groups",
+          "group",
+          (v) => {
+            group = v;
+            renderTable();
+          },
+        ],
+      ])
+        $(id).onclick = (e) => {
+          const b = e.target.closest("button");
+          if (!b) return;
+          for (const n of $(id).querySelectorAll("button"))
+            n.setAttribute("aria-pressed", String(n === b));
+          set(b.dataset[attr]);
+        };
+      $("prices").onclick = async () => {
+        try {
+          rates = await api("prices");
+          edited = new Map();
+          showAll = false;
+          $("price-search").value = "";
+          $("price-error").textContent = "";
+          priceRows();
+          $("price-dialog").showModal();
+        } catch (e) {
+          message(e.message, true);
+        }
+      };
+      function priceRows() {
+        const filter = $("price-search").value.toLowerCase(),
+          active = new Set(data.models.map((m) => m.key));
+        $("price-rows").replaceChildren();
+        const visible = rates.filter(
+          (r) =>
+            (showAll || active.has(r.model) || edited.has(r.model) || filter) &&
+            (!filter || r.model.toLowerCase().includes(filter)),
+        );
+        for (const original of visible) {
+          const r = edited.get(original.model) || original;
+          const tiers = [
+            { price: r, index: -1 },
+            ...(r.overrides || []).map((price, index) => ({ price, index })),
+          ];
+          for (const { price, index } of tiers) {
+            const tr = node("tr"),
+              name = node(
+                "td",
+                index < 0
+                  ? r.model
+                  : "↳ À partir de " +
+                      compact(price.min_input) +
+                      " tokens d’entrée",
+                "price-model",
+              );
+            tr.append(name);
+            for (const field of [
+              "input",
+              "cache_read",
+              "cache_write",
+              "output",
+            ]) {
+              const td = node("td"),
+                input = node("input");
+              input.type = "number";
+              input.min = "0";
+              input.max = "1000000";
+              input.step = "any";
+              input.required = true;
+              input.value = price[field];
+              input.setAttribute(
+                "aria-label",
+                r.model +
+                  " " +
+                  field +
+                  (index < 0 ? "" : " palier " + price.min_input),
+              );
+              input.oninput = () => {
+                const changed = edited.get(r.model) || structuredClone(r);
+                const target = index < 0 ? changed : changed.overrides[index];
+                target[field] = Number(input.value);
+                edited.set(r.model, changed);
+              };
+              td.append(input);
+              tr.append(td);
+            }
+            $("price-rows").append(tr);
+          }
+        }
+        $("price-note").textContent =
+          visible.length +
+          " modèles affichés. " +
+          (!showAll && !filter
+            ? "Modèles utilisés sur cette période ; recherchez un autre modèle pour le modifier."
+            : "");
+      }
+      $("price-search").oninput = priceRows;
+      $("all-prices").onclick = () => {
+        showAll = !showAll;
+        priceRows();
+      };
+      $("add-price").onclick = () => {
+        const model = $("price-search").value.trim();
+        if (!model) return;
+        if (!rates.some((r) => r.model === model)) {
+          const r = {
+            model,
+            input: 0,
+            cache_read: 0,
+            cache_write: 0,
+            output: 0,
+          };
+          rates.push(r);
+          edited.set(model, r);
+        }
+        priceRows();
+      };
+      $("close-prices").onclick = () => $("price-dialog").close();
+      $("price-form").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await api("prices", {
+            method: "PUT",
+            body: JSON.stringify([...edited.values()]),
+          });
+          $("price-dialog").close();
+          load();
+        } catch (e) {
+          $("price-error").textContent = e.message;
+        }
+      };
+      new ResizeObserver(() => draw()).observe($("chart"));
+      setInterval(() => {
+        if (key && !document.hidden && !$("price-dialog").open) load();
+      }, 30000);
+    </script>
+  </body>
+</html>
