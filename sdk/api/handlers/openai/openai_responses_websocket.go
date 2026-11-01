@@ -376,7 +376,8 @@ func (h *OpenAIResponsesAPIHandler) ResponsesWebsocket(c *gin.Context) {
 		return h.forwardResponsesWebsocketInterrupt(socketCtx, passthroughSessionID, payload)
 	}, localInterrupt, writer, wsTimelineLog, &inputEpoch)
 	var duplexInput <-chan cliproxyexecutor.WebsocketInput
-	if codexResponseSteering {
+	_, quotaBatchRouting := h.AuthManager.Selector().(*coreauth.QuotaBatchSelector)
+	if codexResponseSteering && !quotaBatchRouting {
 		duplexInput = input
 	}
 	downstreamSessionKey := websocketDownstreamSessionKey(c.Request)
@@ -619,6 +620,25 @@ func (h *OpenAIResponsesAPIHandler) ResponsesWebsocket(c *gin.Context) {
 					} else {
 						delete(pinnedAuthByProvider, providerKey)
 					}
+				}
+			}
+		}
+		// A native continuation belongs to one upstream account. At a batch
+		// boundary, request a full replay on a new socket instead of forwarding
+		// an account-scoped previous_response_id to a different account.
+		if quotaBatchRouting && pinnedAuthID != "" {
+			if pinned, ok := sessionAuthByID(pinnedAuthID); ok && strings.EqualFold(pinned.Provider, "codex") {
+				chosen, errPick := h.AuthManager.SelectAuth(executionParent, "codex", requestModelName, cliproxyexecutor.Options{})
+				if errPick != nil || chosen == nil || chosen.ID != pinnedAuthID {
+					replayErr := responsesWebsocketHTTPReplayRequiredError()
+					wsTerminateErr = replayErr
+					matched, errClose := writer.closeForUpstreamError(replayErr)
+					if !matched {
+						_ = conn.Close()
+					} else if errClose != nil && !errors.Is(errClose, websocket.ErrCloseSent) {
+						log.Debug("quota-batch: websocket replay close failed")
+					}
+					return
 				}
 			}
 		}
