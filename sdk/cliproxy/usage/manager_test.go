@@ -186,3 +186,24 @@ func TestManagerPublishBackfillsContextAuthFields(t *testing.T) {
 		t.Fatal("timed out waiting for usage record")
 	}
 }
+
+func TestManagerStopDrainsBeforeDone(t *testing.T) {
+	mgr := NewManager(8)
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	mgr.Register(pluginFuncForDrain(func(ctx context.Context, r Record) { close(entered); <-release }))
+	mgr.Publish(context.Background(), Record{RequestID: "drain"})
+	<-entered
+	mgr.Stop()
+	select {
+	case <-mgr.done:
+		t.Fatal("dispatcher finished before sink")
+	default:
+	}
+	close(release)
+	<-mgr.done
+}
+
+type pluginFuncForDrain func(context.Context, Record)
+
+func (f pluginFuncForDrain) HandleUsage(ctx context.Context, r Record) { f(ctx, r) }

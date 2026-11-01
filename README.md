@@ -149,6 +149,8 @@ see [MANAGEMENT_API.md](https://help.router-for.me/management/api)
 
 ## Usage Statistics
 
+This fork includes a lightweight [Usage dashboard](docs/usage-dashboard.md) at `/usage.html`, with persistent local history, editable USD cost estimates, and account/provider/model breakdowns. Use the existing management key; no extra service is required.
+
 Since v6.10.0, CLIProxyAPI and [CPAMC](https://github.com/router-for-me/Cli-Proxy-API-Management-Center) no longer ship built-in usage statistics. If you need usage statistics, use:
 
 ### [CPA Usage Keeper](https://github.com/Willxup/cpa-usage-keeper)

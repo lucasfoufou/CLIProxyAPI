@@ -75,3 +75,14 @@ func TestApplyManagerConfigStopsReplacedServiceAffinitySelector(t *testing.T) {
 		t.Fatal("expected replaced selector to be stopped during routing config apply")
 	}
 }
+
+func TestQuotaBatchRoutingOverridesSessionAffinity(t *testing.T) {
+	cfg := &internalconfig.Config{}
+	cfg.Routing.Strategy = "quota-batch"
+	cfg.Routing.SessionAffinity = true
+	cfg.AuthDir = t.TempDir()
+	state := normalizedRoutingRuntimeState(cfg)
+	if _, ok := newRoutingSelector(state).(*coreauth.QuotaBatchSelector); !ok {
+		t.Fatal("session affinity must not bypass quota batches")
+	}
+}

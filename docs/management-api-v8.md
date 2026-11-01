@@ -246,3 +246,7 @@ accepts legacy, new, or mixed layouts, normalizing v8 documents on save.
 
 Plugin OAuth uses the shared v8 login endpoint. Other plugin-defined HTTP
 extensions retain their declared `/v0/management` routes.
+
+## Persistent Usage dashboard (fork extension)
+
+See [Usage dashboard](usage-dashboard.md) for the authenticated `/v8/management/observability/usage/summary` and `/prices` endpoints and the standalone `/usage.html` page.
